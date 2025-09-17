@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id          String       @id @default(cuid())
+  email       String       @unique
+  name        String?
+  password    String
+  role        Role         @default(USER)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  submissions Submission[]
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model Problem {
+  id           String       @id @default(cuid())
+  title        String
+  slug         String       @unique
+  description  String
+  difficulty   Difficulty
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  tags         Tag[]
+  testCases    TestCase[]
+  submissions  Submission[]
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  problems  Problem[]
+}
+
+model TestCase {
+  id             String  @id @default(cuid())
+  input          String
+  expectedOutput String
+  problemId      String
+  problem        Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+}
+
+enum SubmissionStatus {
+  PENDING
+  PROCESSING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  COMPILATION_ERROR
+  RUNTIME_ERROR
+}
+
+model Submission {
+  id        String           @id @default(cuid())
+  code      String
+  language  String // e.g., 'javascript', 'python', 'cpp'
+  status    SubmissionStatus @default(PENDING)
+  output    String?
+  createdAt DateTime         @default(now())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  problemId String
+  problem   Problem          @relation(fields: [problemId], references: [id])
+}
